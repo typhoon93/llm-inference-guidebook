@@ -1,0 +1,9 @@
+OS: Rocky Linux 9.8 (Blue Onyx)
+Kernel: 5.14.0-687.15.1.el9_8.x86_64
+Architecture: x86_64
+CPU: Intel Core i7-10750H (6 cores / 12 threads, up to 5.0 GHz)
+Memory: 40 GiB RAM
+GPU: NVIDIA GeForce RTX 2060 Laptop GPU
+VRAM: 6 GiB
+Driver: 610.43.02
+CUDA: 13.3
