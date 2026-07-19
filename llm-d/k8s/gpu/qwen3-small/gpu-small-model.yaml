@@ -1,0 +1,128 @@
+apiVersion: v1
+kind: ServiceAccount
+automountServiceAccountToken: false
+metadata:
+  labels:
+    llm-d.ai/accelerator-variant: gpu
+    llm-d.ai/accelerator-vendor: nvidia
+    llm-d.ai/guide: small-gpu
+    llm-d.ai/model: Qwen3-0.6B
+  name: qwen3-small-nvidia-gpu-vllm-sa
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    llm-d.ai/accelerator-variant: gpu
+    llm-d.ai/accelerator-vendor: nvidia
+    llm-d.ai/guide: small-gpu
+    llm-d.ai/model: Qwen3-0.6B
+    llm-d.ai/role: decode
+  name: qwen3-small-nvidia-gpu-vllm-decode
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      llm-d.ai/accelerator-variant: gpu
+      llm-d.ai/accelerator-vendor: nvidia
+      llm-d.ai/guide: small-gpu
+      llm-d.ai/model: Qwen3-0.6B
+      llm-d.ai/role: decode
+  template:
+    metadata:
+      labels:
+        llm-d.ai/accelerator-variant: gpu
+        llm-d.ai/accelerator-vendor: nvidia
+        llm-d.ai/guide: small-gpu
+        llm-d.ai/model: Qwen3-0.6B
+        llm-d.ai/role: decode
+    spec:
+      runtimeClassName: nvidia ### Important, added later
+      automountServiceAccountToken: false
+      serviceAccountName: qwen3-small-nvidia-gpu-vllm-sa
+      containers:
+        - name: modelserver
+          image: vllm/vllm-openai:v0.23.0
+          imagePullPolicy: IfNotPresent
+          command:
+            - vllm
+            - serve
+          args:
+            - Qwen/Qwen3-0.6B
+            - --host=0.0.0.0
+            - --port=8000
+            - --tensor-parallel-size=1
+            - --gpu-memory-utilization=0.42
+            - --max-model-len=2048
+            - --max-num-seqs=4
+            - --max-num-batched-tokens=2048
+            - --enforce-eager
+            - --disable-access-log-for-endpoints=/health,/metrics,/v1/models
+          env:
+            - name: HF_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: llm-d-hf-token
+                  key: HF_TOKEN
+                  optional: true
+            - name: USER
+              value: llm-d
+            - name: HF_HOME
+              value: /.cache/huggingface
+          ports:
+            - containerPort: 8000
+              name: modelserver
+              protocol: TCP
+          resources:
+            limits:
+              cpu: "4"
+              memory: 8Gi
+              nvidia.com/gpu: 1
+            requests:
+              cpu: "1"
+              memory: 3Gi
+              nvidia.com/gpu: 1
+          startupProbe:
+            httpGet:
+              path: /health
+              port: modelserver
+            failureThreshold: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: modelserver
+            failureThreshold: 3
+            periodSeconds: 15
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /v1/models
+              port: modelserver
+            failureThreshold: 6
+            periodSeconds: 5
+            timeoutSeconds: 3
+          volumeMounts:
+            - name: shm
+              mountPath: /dev/shm
+            - name: model-cache
+              mountPath: /.cache
+            - name: triton-cache
+              mountPath: /.triton
+            - name: vllm-config
+              mountPath: /.config
+      volumes:
+        - name: shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Gi
+        - name: model-cache
+          emptyDir:
+            sizeLimit: 8Gi
+        - name: triton-cache
+          emptyDir:
+            sizeLimit: 1Gi
+        - name: vllm-config
+          emptyDir:
+            sizeLimit: 256Mi
