@@ -360,6 +360,9 @@ brew install --cask headlamp
 
 # OpenLens Desktop
 brew install --cask openlens
+
+# helm, needed for llm-d later
+brew install helm
 ```
 
 ---

@@ -1,6 +1,3 @@
-Links:
-
----
 What is llm-d and why we need it
 ---
 
@@ -16,8 +13,19 @@ What is llm-d and why we need it
     - Kubernetes: an open source container-orchestration platform that automates many of the manual processes involved in deploying, managing, and scaling containerized applications.
     - vLLM: an open source inference server that speeds up the outputs of gen AI applications.
     - Inference Gateway (IGW): a Kubernetes Gateway API extension that hosts features like model routing, serving priority, and “smart” load-balancing capabilities. 
+---
+# Quickstart
+You can follow quickstart to the T after you install your k3s (check the file in this folder); The guide uses a 32b model and 8 pods which basically stays pending constantly for me as I haven't configured the k3s to use my GPU + wont really fit to my system - it needs 2 gpus, per pod that are much bigger.. so just follow it, and in the end delete the pods with this:
 
-## Links
+```
+kubectl delete -n ${NAMESPACE} -k guides/optimized-baseline/modelserver/gpu/vllm/base
+```
+## Quickstart for GPU poor people
+Like me..
+1. Read the `README.md` in `./register-nvidia-gpu` folder and follow the steps; to ensure you have registered your GPU and the cluster works with it fine.
+2.
+
+# Links
 - https://www.redhat.com/en/blog/what-llm-d-and-why-do-we-need-it
 - https://www.redhat.com/en/topics/ai/what-is-llm-d
 - Github: https://github.com/llm-d/llm-d
